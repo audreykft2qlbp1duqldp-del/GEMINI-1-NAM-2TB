@@ -41,17 +41,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      # Cần nightly để tránh nsig/SABR
-      - name: "Update yt-dlp to nightly"
+      # Thay bước này: cài yt-dlp mới nhất từ GitHub (tương đương nightly)
+      - name: "Install latest yt-dlp from master"
         run: |
-          python -m pip install --upgrade --pre yt-dlp-nightly
-          yt-dlp --version
+          python -m pip install --upgrade "yt-dlp @ https://github.com/yt-dlp/yt-dlp/archive/refs/heads/master.zip"
+          python - << 'PY'
+          import yt_dlp, sys
+          print("yt-dlp version:", yt_dlp.__version__)
+          print("Python:", sys.version)
+          PY
 
       - name: "Install Python deps"
         run: |
           python -m pip install --upgrade google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
 
-      # Ghi cookies_multi.txt nếu secret có set (đưa secrets vào env của step để YAML an toàn)
+      # Ghi cookies_multi.txt nếu secret có set (dùng env step để YAML an toàn)
       - name: "Write cookies_multi.txt (optional)"
         env:
           _COOKIES: ${{ secrets.YT_COOKIES_MULTI }}
