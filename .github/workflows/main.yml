@@ -41,15 +41,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      # Thay bước này: cài yt-dlp mới nhất từ GitHub (tương đương nightly)
+      # Cài yt-dlp mới nhất từ GitHub (tương đương nightly) và kiểm tra bằng CLI
       - name: "Install latest yt-dlp from master"
         run: |
           python -m pip install --upgrade "yt-dlp @ https://github.com/yt-dlp/yt-dlp/archive/refs/heads/master.zip"
-          python - << 'PY'
-          import yt_dlp, sys
-          print("yt-dlp version:", yt_dlp.__version__)
-          print("Python:", sys.version)
-          PY
+          yt-dlp --version
 
       - name: "Install Python deps"
         run: |
