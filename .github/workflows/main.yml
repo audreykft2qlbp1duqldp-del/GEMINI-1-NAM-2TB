@@ -1,9 +1,10 @@
-name: YouTube Audio → Drive (fixed)
+name: "YouTube Audio to Drive (fixed)"
 
 on:
   workflow_dispatch: {}
-  schedule:
-    - cron: "0 */6 * * *"   # có thể xoá nếu không cần
+  # Nếu cần chạy định kỳ, mở comment dưới:
+  # schedule:
+  #   - cron: "0 */6 * * *"
 
 jobs:
   run:
@@ -27,52 +28,57 @@ jobs:
       PO_TOKEN: ${{ secrets.PO_TOKEN }}
 
     steps:
-      - name: Checkout
+      - name: "Checkout"
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: "Setup Python"
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: Install system deps (ffmpeg)
+      - name: "Install system deps (ffmpeg)"
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      # Giữ nguyên ý tưởng: cần nightly để né nsig/SABR
-      - name: Update yt-dlp to nightly
+      # Cần nightly để tránh nsig/SABR
+      - name: "Update yt-dlp to nightly"
         run: |
           python -m pip install --upgrade --pre yt-dlp-nightly
           yt-dlp --version
 
-      - name: Install Python deps
+      - name: "Install Python deps"
         run: |
           python -m pip install --upgrade google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
 
-      # (OPTIONAL) Ghi cookies_multi.txt nếu secret có set
-      # Đặt điều kiện trong bash để tránh lỗi YAML ở bước if:
-      - name: Write cookies_multi.txt (optional)
+      # Ghi cookies_multi.txt nếu secret có set (đưa secrets vào env của step để YAML an toàn)
+      - name: "Write cookies_multi.txt (optional)"
+        env:
+          _COOKIES: ${{ secrets.YT_COOKIES_MULTI }}
         run: |
-          if [ -n "${{ secrets.YT_COOKIES_MULTI }}" ]; then
-            mkdir -p data
-            printf "%s" "${{ secrets.YT_COOKIES_MULTI }}" > data/cookies_multi.txt
+          set -e
+          mkdir -p data
+          if [ -n "${_COOKIES}" ]; then
+            printf '%s' "${_COOKIES}" > data/cookies_multi.txt
             echo "cookies_multi.txt created."
           else
             echo "YT_COOKIES_MULTI not set; skipping."
           fi
 
-      # (OPTIONAL) Ghi po_token.txt nếu bạn muốn để ở file thay vì env
-      - name: Write po_token.txt (optional)
+      # Ghi po_token.txt nếu muốn để ở file
+      - name: "Write po_token.txt (optional)"
+        env:
+          _POFILE: ${{ secrets.PO_TOKEN_FILE }}
         run: |
-          if [ -n "${{ secrets.PO_TOKEN_FILE }}" ]; then
-            mkdir -p data
-            printf "%s" "${{ secrets.PO_TOKEN_FILE }}" > data/po_token.txt
+          set -e
+          mkdir -p data
+          if [ -n "${_POFILE}" ]; then
+            printf '%s' "${_POFILE}" > data/po_token.txt
             echo "po_token.txt created."
           else
             echo "PO_TOKEN_FILE not set; skipping."
           fi
 
-      - name: Run: YouTube audio -> Drive
+      - name: "Run - YouTube audio to Drive"
         run: |
           python -u yt_audio_to_drive.py
